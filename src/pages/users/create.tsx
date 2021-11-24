@@ -8,18 +8,62 @@ import {
   SimpleGrid,
   Button,
 } from '@chakra-ui/react'
+import { SubmitHandler, useForm } from 'react-hook-form'
+
+import * as yup from 'yup'
+import { yupResolver } from '@hookform/resolvers/yup/dist/yup'
 import Link from 'next/link'
 import { Input } from '../../components/Form/Input'
 import { Header } from '../../components/Header'
 import { Sidebar } from '../../components/Sidebar'
 
+type CreateUserFormData = {
+  name: string
+  email: string
+  password: string
+  password_confirmation: string
+}
+
+const createUserFormSchema = yup
+  .object({
+    name: yup.string().required('Nome obrigatório'),
+    email: yup.string().email('Email inválido').required('Email obrigatório'),
+    password: yup
+      .string()
+      .required('Senha obrigatória')
+      .min(6, 'No mínimo 6 caracteres'),
+    passwordConfirmation: yup
+      .string()
+      .oneOf([null, yup.ref('password')], 'Senhas não conferem'),
+  })
+  .required()
+
 export default function CreateUser() {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    resolver: yupResolver(createUserFormSchema),
+  })
+
+  const handleCreateUser: SubmitHandler<CreateUserFormData> = async data => {
+    await new Promise(resolve => setTimeout(resolve, 2000))
+  }
+
   return (
     <Box>
       <Header />
       <Flex w="100%" my="6" maxW={1480} mx="auto" px="6">
         <Sidebar />
-        <Box flex="1" borderRadius={8} bg="gray.800" p={['6', '8']}>
+        <Box
+          as="form"
+          onSubmit={handleSubmit(handleCreateUser)}
+          flex="1"
+          borderRadius={8}
+          bg="gray.800"
+          p={['6', '8']}
+        >
           <Heading size="lg" fontWeight="normal">
             Criar usuário
           </Heading>
@@ -27,16 +71,35 @@ export default function CreateUser() {
 
           <VStack spacing="8">
             <SimpleGrid minChildWidth="240px" w="100%" spacing={['6', '8']}>
-              <Input name="name" label="Nome completo" />
-              <Input name="email" type="email" label="E-mail" />
+              <Input
+                name="name"
+                label="Nome completo"
+                error={errors.name}
+                {...register('name')}
+              />
+              <Input
+                name="email"
+                type="email"
+                label="E-mail"
+                error={errors.email}
+                {...register('email')}
+              />
             </SimpleGrid>
 
             <SimpleGrid minChildWidth="240px" w="100%" spacing={['6', '8']}>
-              <Input name="password" type="password" label="Senha" />
+              <Input
+                name="password"
+                type="password"
+                label="Senha"
+                error={errors.password}
+                {...register('password')}
+              />
               <Input
                 name="password_confirmation"
                 type="password"
                 label="Confirmar Senha"
+                error={errors.passwordConfirmation}
+                {...register('passwordConfirmation')}
               />
             </SimpleGrid>
           </VStack>
@@ -46,7 +109,9 @@ export default function CreateUser() {
               <Link href="/users" passHref>
                 <Button colorScheme="whiteAlpha">Cancelar</Button>
               </Link>
-              <Button colorScheme="pink">Salvar</Button>
+              <Button type="submit" colorScheme="pink" isLoading={isSubmitting}>
+                Salvar
+              </Button>
             </HStack>
           </Flex>
         </Box>
